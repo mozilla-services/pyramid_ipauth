@@ -40,7 +40,8 @@ import socket
 from pyramid.testing import DummyRequest
 from pyramid.security import Everyone, Authenticated
 
-from pyramid_ipauth import IPAuthenticationPolicy, make_ip_set, IPAddress
+from pyramid_ipauth import IPAuthenticationPolicy
+from pyramid_ipauth.utils import make_ip_set, IPAddress
 
 
 class IPAuthPolicyTests(unittest2.TestCase):
