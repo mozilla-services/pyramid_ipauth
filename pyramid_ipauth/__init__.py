@@ -81,6 +81,23 @@ class IPAuthenticationPolicy(object):
         self.principals = principals
         self.proxies = make_ip_set(proxies)
 
+    @classmethod
+    def from_settings(cls, settings, prefix="ipauth."):
+        # Grab out all the settings keys that start with our prefix.
+        ipauth_settings = {}
+        for name, value in settings.iteritems():
+            if not name.startswith(prefix):
+                continue
+            ipauth_settings[name[len(prefix):]] = value
+        # Now look for specific keys
+        ipaddrs = ipauth_settings.get("ipaddrs", "")
+        userid = ipauth_settings.get("userid", None)
+        principals = ipauth_settings.get("principals", "").split()
+        proxies = ipauth_settings.get("proxies", None)
+        # The constructor uses make_ip_set to parse out strings,
+        # so we're free to just pass them on in.
+        return cls(ipaddrs, userid, principals, proxies)
+
     def authenticated_userid(self, request):
         return self.unauthenticated_userid(request)
 
@@ -104,3 +121,40 @@ class IPAuthenticationPolicy(object):
 
     def forget(self, request):
         pass
+
+
+def includeme(config):
+    """Include default ipauth settings into a pyramid config.
+
+    This function provides a hook for pyramid to include the default settings
+    for ip-based auth.  Activate it like so:
+
+        config.include("pyramid_ipauth")
+
+    This will activate an IPAuthenticationPolicy instance with settings taken
+    from the the application settings as follows:
+
+        * ipauth.ipaddrs:     list of ip addresses to authenticate
+        * ipauth.userid:      the userid as which to authenticate
+        * ipauth.principals:  additional principals as which to authenticate
+        * ipauth.proxies:     list of ip addresses to trust as proxies
+
+    IP addresses can be specified in a variety of formats, including single
+    addresses ("1.2.3.4"), networks ("1.2.3.0/16"), and globs ("1.2.3.*").
+    You can also provide a whitespace-separated list of addresses to handle
+    discontiguous ranges.
+    """
+    # Grab the pyramid-wide settings, to look for any auth config.
+    settings = config.get_settings().copy()
+    # As a compatability hook for mozsvc, also load prefixed sections
+    # from the Config object if present.
+    mozcfg = settings.get("config")
+    if mozcfg is not None:
+        for section in mozcfg.sections():
+            if section == "ipauth" or section.startswith("ipauth:"):
+                setting_prefix = section.replace(":", ".")
+                for name, value in mozcfg.get_map(section).iteritems():
+                    settings[setting_prefix + "." + name] = value
+    # Use the settings to construct an AuthenticationPolicy.
+    authn_policy = IPAuthenticationPolicy.from_settings(settings)
+    config.set_authentication_policy(authn_policy)
