@@ -83,14 +83,16 @@ class IPAuthenticationPolicy(object):
         self.proxies = make_ip_set(proxies)
 
     @classmethod
-    def from_settings(cls, settings, prefix="ipauth."):
+    def from_settings(cls, settings={}, prefix="ipauth.", **kwds):
         # Grab out all the settings keys that start with our prefix.
         ipauth_settings = {}
         for name, value in settings.iteritems():
             if not name.startswith(prefix):
                 continue
             ipauth_settings[name[len(prefix):]] = value
-        # Now look for specific keys
+        # Update with any additional keyword arguments.
+        ipauth_settings.update(kwds)
+        # Now look for specific keys of interest.
         ipaddrs = ipauth_settings.get("ipaddrs", "")
         userid = ipauth_settings.get("userid", None)
         principals = ipauth_settings.get("principals", "").split()
