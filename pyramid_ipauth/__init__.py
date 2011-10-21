@@ -40,6 +40,7 @@ IP-based authentication policy for pyramid.
 from zope.interface import implements
 from pyramid.interfaces import IAuthenticationPolicy
 from pyramid.security import Everyone, Authenticated
+from pyramid.authorization import ACLAuthorizationPolicy
 
 from pyramid_ipauth.utils import make_ip_set, check_ip_address
 
@@ -158,3 +159,8 @@ def includeme(config):
     # Use the settings to construct an AuthenticationPolicy.
     authn_policy = IPAuthenticationPolicy.from_settings(settings)
     config.set_authentication_policy(authn_policy)
+    # Hook up a default AuthorizationPolicy.
+    # ACLAuthorizationPolicy is usually what you want.
+    # If the app configures one explicitly then this will get overridden.
+    authz_policy = ACLAuthorizationPolicy()
+    config.set_authorization_policy(authz_policy)
