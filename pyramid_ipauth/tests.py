@@ -35,7 +35,6 @@
 # ***** END LICENSE BLOCK *****
 
 import unittest2
-import socket
 
 from netaddr import IPAddress, IPSet, IPRange, IPGlob, IPNetwork
 
@@ -125,7 +124,7 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.assertTrue(check_ip_address(request, "192.168.0.1"))
         self.assertTrue(check_ip_address(request, "192.168.0.1/8"))
         self.assertFalse(check_ip_address(request, "192.168.0.2"))
-        
+
     def test_x_forwarded_for(self):
         policy = IPAuthenticationPolicy(["123.123.0.0/16"], "user",
                               proxies=["124.124.0.0/24"])
@@ -210,7 +209,7 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.assertTrue(is_in("127.0.0.1", int(IPAddress("127.0.0.1"))))
         self.assertTrue(is_in("127.0.0.1", IPNetwork("127.0.0.1/8")))
         self.assertTrue(is_in("127.0.0.1", IPGlob("127.0.0.*")))
-        self.assertTrue(is_in("127.0.0.1", IPRange("127.0.0.1","127.0.0.2")))
+        self.assertTrue(is_in("127.0.0.1", IPRange("127.0.0.1", "127.0.0.2")))
         self.assertTrue(is_in("127.0.0.1", IPSet(["127.0.0.1/8"])))
         self.assertFalse(is_in("127.0.0.1", ""))
         self.assertFalse(is_in("127.0.0.1", None))
