@@ -123,10 +123,10 @@ class IPAuthenticationPolicy(object):
         return principals
 
     def remember(self, request, principal, **kw):
-        pass
+        return []
 
     def forget(self, request):
-        pass
+        return []
 
 
 def includeme(config):
@@ -152,11 +152,11 @@ def includeme(config):
     """
     # Grab the pyramid-wide settings, to look for any auth config.
     settings = config.get_settings().copy()
-    # Use the settings to construct an AuthenticationPolicy.
-    authn_policy = IPAuthenticationPolicy.from_settings(settings)
-    config.set_authentication_policy(authn_policy)
     # Hook up a default AuthorizationPolicy.
     # ACLAuthorizationPolicy is usually what you want.
     # If the app configures one explicitly then this will get overridden.
     authz_policy = ACLAuthorizationPolicy()
     config.set_authorization_policy(authz_policy)
+    # Use the settings to construct an AuthenticationPolicy.
+    authn_policy = IPAuthenticationPolicy.from_settings(settings)
+    config.set_authentication_policy(authn_policy)

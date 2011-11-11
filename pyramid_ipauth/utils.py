@@ -72,15 +72,20 @@ def get_ip_address(request, proxies=None):
     except KeyError:
         pass
     else:
-        addr_chain.extend(IPAddress(a.strip()) for a in xff.split(","))
-    addr_chain.append(IPAddress(request.environ["REMOTE_ADDR"]))
+        addr_chain.extend(a.strip() for a in xff.split(","))
+    addr_chain.append(request.environ["REMOTE_ADDR"])
     # Pop trusted proxies from the list until we get the original addr,
-    # or until we hit an untrusted proxy.
-    while len(addr_chain) > 1:
-        addr = addr_chain.pop()
+    # or until we hit a malformed or untrusted proxy.
+    addr = IPAddress(addr_chain.pop())
+    while addr_chain:
+        # If it's not a trusted proxy, stop the chain.
         if addr not in proxies:
-            return addr
-    return addr_chain[0]
+            break
+        # If next is a malformed IP address, stop the chain.
+        if len(addr_chain[-1].split()) > 1:
+            break
+        addr = IPAddress(addr_chain.pop())
+    return addr
 
 
 def check_ip_address(request, ipaddrs, proxies=None):
