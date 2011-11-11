@@ -18,7 +18,7 @@
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
-#   Ryan Kelly (ryan@rfk.id.au)
+#   Ryan Kelly (rkelly@mozilla.com)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,9 +38,11 @@ IP-based authentication policy for pyramid.
 """
 
 from zope.interface import implements
+
 from pyramid.interfaces import IAuthenticationPolicy
 from pyramid.security import Everyone, Authenticated
 from pyramid.authorization import ACLAuthorizationPolicy
+from pyramid.settings import aslist
 
 from pyramid_ipauth.utils import make_ip_set, check_ip_address
 
@@ -84,6 +86,7 @@ class IPAuthenticationPolicy(object):
 
     @classmethod
     def from_settings(cls, settings={}, prefix="ipauth.", **kwds):
+        """Construct an IPAuthenticationPolicy from deployment settings."""
         # Grab out all the settings keys that start with our prefix.
         ipauth_settings = {}
         for name, value in settings.iteritems():
@@ -95,7 +98,7 @@ class IPAuthenticationPolicy(object):
         # Now look for specific keys of interest.
         ipaddrs = ipauth_settings.get("ipaddrs", "")
         userid = ipauth_settings.get("userid", None)
-        principals = ipauth_settings.get("principals", "").split()
+        principals = aslist(ipauth_settings.get("principals", ""))
         proxies = ipauth_settings.get("proxies", None)
         # The constructor uses make_ip_set to parse out strings,
         # so we're free to just pass them on in.
@@ -149,15 +152,6 @@ def includeme(config):
     """
     # Grab the pyramid-wide settings, to look for any auth config.
     settings = config.get_settings().copy()
-    # As a compatability hook for mozsvc, also load prefixed sections
-    # from the Config object if present.
-    mozcfg = settings.get("config")
-    if mozcfg is not None:
-        for section in mozcfg.sections():
-            if section == "ipauth" or section.startswith("ipauth:"):
-                setting_prefix = section.replace(":", ".")
-                for name, value in mozcfg.get_map(section).iteritems():
-                    settings[setting_prefix + "." + name] = value
     # Use the settings to construct an AuthenticationPolicy.
     authn_policy = IPAuthenticationPolicy.from_settings(settings)
     config.set_authentication_policy(authn_policy)

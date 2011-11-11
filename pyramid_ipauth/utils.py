@@ -18,7 +18,7 @@
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
-#   Ryan Kelly (ryan@rfk.id.au)
+#   Ryan Kelly (rkelly@mozilla.com)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -56,10 +56,9 @@ def get_ip_address(request, proxies=None):
     given request, by looking up the REMOTE_ADDR and HTTP_X_FORWARDED_FOR
     entries from the request environment.
 
-    If the "proxies" argument is not specified, then the X-Forwarded-For
-    header is ignored and REMOTE_ADDR is returned directly.  If "proxies" is
-    given then it must be an IPAddrSet listing trusted proxies.  The entries
-    in X-Forwarded-For will be traversed back through trusted proxies, stopping
+    By default this function does not make use of the X-Forwarded-For header.
+    To use it you must specify a set of trusted proxy IP addresses.  The
+    X-Forwarded-For header will then be traversed back through trusted proxies,
     stopping either at the first untrusted proxy or at the claimed original IP.
     """
     if proxies is None:
@@ -85,12 +84,15 @@ def get_ip_address(request, proxies=None):
 
 
 def check_ip_address(request, ipaddrs, proxies=None):
-    """Check whether request originated within the given ip addresses.
+    """Check whether a request originated within the given ip address set.
 
     This function checks whether the originating IP address of the request
-    is within the given set of IP addresses.  If given, the argument
-    "proxies" must be a set of trusted proxy IP addresses, which will be
-    used to determine the originating IP as per the get_ip_address function.
+    is within the given set of IP addresses, returning True if it is and False
+    if not.
+
+    By default this function does not make use of the X-Forwarded-For header.
+    To use it you must specify a set of trusted proxy IP addresses which will
+    be passed on to the get_ip_address function.
     """
     if not isinstance(ipaddrs, IPSet):
         ipaddrs = make_ip_set(ipaddrs)
@@ -107,7 +109,7 @@ def make_ip_set(ipaddrs):
         * as an IPSet, IPAddress, IPNetwork, IPGlob or IPRange object
         * as the literal None for the empty set
         * as an int parsable by IPAddress
-        * as a string parsable by make_ip_set
+        * as a string parsable by parse_ip_set
         * as an iterable of IP specifications
 
     """
@@ -120,7 +122,7 @@ def make_ip_set(ipaddrs):
     # Integers represent a single address.
     if isinstance(ipaddrs, (int, long)):
         return IPSet((IPAddress(ipaddrs),))
-    # Strings get parsed as per make_ip_set
+    # Strings get parsed as per parse_ip_set
     if isinstance(ipaddrs, basestring):
         return parse_ip_set(ipaddrs)
     # Other netaddr types can be converted into a set.
@@ -145,7 +147,7 @@ def make_ip_set(ipaddrs):
 def parse_ip_set(ipaddrs):
     """Parse a string specification into an IPSet.
 
-    This function takes a string representing a set of IP addresses, and
+    This function takes a string representing a set of IP addresses and
     parses it into an IPSet object.  Acceptable formats for the string
     include:
 
