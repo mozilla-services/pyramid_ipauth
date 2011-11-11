@@ -2,16 +2,16 @@
 pyramid_ipauth
 ==============
 
+An authentication policy for Pyramid that sets identity and effective
+principals based on the remote IP address of the request.
+
 
 Overview
 ========
 
-This is an authentication policy for Pyramid that sets identity and principal
-information based on the remote IP address of the request.
-
-To use it, create an IPAuthenticationPolicy and specify the target IP range,
-userid and effective principals.  Then set it as the authentication policy
-in your configurator::
+To perform IP-address-based authentication, create an IPAuthenticationPolicy
+and specify the target IP range, userid and effective principals.  Then set it
+as the authentication policy in your configurator::
 
     authn_policy = IPAuthenticationPolicy("127.0.*.*", "myuser", ["locals"])
     config.set_authentication_policy(authn_policy)
