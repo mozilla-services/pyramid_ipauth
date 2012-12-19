@@ -32,7 +32,7 @@ You can then simply include the pyramid_ipauth package into your configurator::
 
     config.include("pyramid_ipauth")
 
-It will detect the ipauth settings and construct and appopriate policy.
+It will detect the ipauth settings and construct an appropriate policy.
 
 Note that this package only supports matching against a single set of IP
 addresss.  If you need to assign different credentials to different sets
