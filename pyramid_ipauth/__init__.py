@@ -19,6 +19,7 @@ from pyramid.interfaces import IAuthenticationPolicy
 from pyramid.security import Everyone, Authenticated
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.settings import aslist
+from pyramid.path import DottedNameResolver
 
 from pyramid_ipauth.utils import make_ip_set, check_ip_address
 
@@ -49,13 +50,36 @@ class IPAuthenticationPolicy(object):
 
         IPAuthenticationPolicy(["192.168.0.0/24"], "myuser",
                                proxies=["192.168.0.2"])
+                               
+    Instead of given the IP addresses, userid and principals at configuration time.
+    we can also compute these at runtime.
+
+        def get_userid(request):
+            "compute a userid based on the request"
+            if request['REMOTE_ADDR'].startswith('192'):
+                return 'LAN-user'
+            return 'WAN-user'
+        def get_principals(userid, request):
+            "return a list of principals"
+            if userid == 'WAN-user':
+                return ['view']
+            if userid == 'LAN-user':
+                return ['view', 'edit']
+            return []
+        IPAuthenticationPolicy(get_userid=get_userid, get_principals=get_principals)
 
     """
 
     implements(IAuthenticationPolicy)
 
-    def __init__(self, ipaddrs, userid=None, principals=None, proxies=None):
-        self.ipaddrs = make_ip_set(ipaddrs)
+    def __init__(self, ipaddrs=None, userid=None, principals=None, proxies=None, get_userid=None, get_principals=None):
+        r = DottedNameResolver()
+        self.get_userid = r.maybe_resolve(get_userid)
+        self.get_principals = r.maybe_resolve(get_principals)
+        if get_userid is not None:
+            self.ipaddrs = None
+        else:
+            self.ipaddrs = make_ip_set(ipaddrs)
         self.userid = userid
         self.principals = principals
         self.proxies = make_ip_set(proxies)
@@ -76,26 +100,43 @@ class IPAuthenticationPolicy(object):
         userid = ipauth_settings.get("userid", None)
         principals = aslist(ipauth_settings.get("principals", ""))
         proxies = ipauth_settings.get("proxies", None)
+        get_userid = ipauth_settings.get("get_userid", None)
+        get_principals = ipauth_settings.get("get_principals", None)
         # The constructor uses make_ip_set to parse out strings,
         # so we're free to just pass them on in.
-        return cls(ipaddrs, userid, principals, proxies)
+        return cls(ipaddrs, userid, principals, proxies, get_userid, get_principals)
 
     def authenticated_userid(self, request):
         return self.unauthenticated_userid(request)
 
     def unauthenticated_userid(self, request):
+        if self.get_userid is not None:
+            return self.get_userid(request)
         if not check_ip_address(request, self.ipaddrs, self.proxies):
             return None
         return self.userid
 
     def effective_principals(self, request):
         principals = [Everyone]
-        if check_ip_address(request, self.ipaddrs, self.proxies):
-            if self.userid is not None:
-                principals.insert(0, self.userid)
+        
+        if self.get_userid is not None:
+            userid = self.get_userid(request)
+            if userid is None:
+                return principals
+        else:
+            userid = self.userid
+            
+        if userid is not None:
+            principals.insert(0, userid)
+            
+        if self.get_principals is not None:
+            principals.append(Authenticated)
+            principals.extend(self.get_principals(userid, request))
+        elif check_ip_address(request, self.ipaddrs, self.proxies):
             principals.append(Authenticated)
             if self.principals is not None:
                 principals.extend(self.principals)
+                
         return principals
 
     def remember(self, request, principal, **kw):
@@ -133,6 +174,6 @@ def includeme(config):
     # If the app configures one explicitly then this will get overridden.
     authz_policy = ACLAuthorizationPolicy()
     config.set_authorization_policy(authz_policy)
-    # Use the settings to construct an AuthenticationPolicy.
+    # Use the se    ttings to construct an AuthenticationPolicy.
     authn_policy = IPAuthenticationPolicy.from_settings(settings)
     config.set_authentication_policy(authn_policy)
