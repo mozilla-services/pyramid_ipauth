@@ -185,13 +185,13 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.assertRaises(ValueError, is_in, "127.0.0.1", Ellipsis)
 
     def test_callbacks(self):
-        def get_userid(request):
-            if request['REMOTE_ADDR'].startswith('192'):
+        def get_userid(ipaddr):
+            if str(ipaddr).startswith('192'):
                 return 'LAN-user'
-            if request['REMOTE_ADDR'].startswith('127'):
+            if str(ipaddr).startswith('127'):
                 return 'localhost-user'
             return None
-        def get_principals(userid, request):
+        def get_principals(userid, ipaddr):
             principals = {
                 'LAN-user': ['view'],
                 'localhost-user': ['view', 'edit'],

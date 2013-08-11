@@ -21,7 +21,7 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.settings import aslist
 from pyramid.path import DottedNameResolver
 
-from pyramid_ipauth.utils import make_ip_set, check_ip_address
+from pyramid_ipauth.utils import make_ip_set, check_ip_address, get_ip_address
 
 
 class IPAuthenticationPolicy(object):
@@ -54,12 +54,12 @@ class IPAuthenticationPolicy(object):
     Instead of given the IP addresses, userid and principals at configuration time.
     we can also compute these at runtime.
 
-        def get_userid(request):
+        def get_userid(ipaddr):
             "compute a userid based on the request"
-            if request['REMOTE_ADDR'].startswith('192'):
+            if str(ipaddr).startswith('192'):
                 return 'LAN-user'
             return 'WAN-user'
-        def get_principals(userid, request):
+        def get_principals(userid, ipaddr):
             "return a list of principals"
             if userid == 'WAN-user':
                 return ['view']
@@ -111,7 +111,7 @@ class IPAuthenticationPolicy(object):
 
     def unauthenticated_userid(self, request):
         if self.get_userid is not None:
-            return self.get_userid(request)
+            return self.get_userid(get_ip_address(request, self.proxies))
         if not check_ip_address(request, self.ipaddrs, self.proxies):
             return None
         return self.userid
@@ -120,7 +120,7 @@ class IPAuthenticationPolicy(object):
         principals = [Everyone]
         
         if self.get_userid is not None:
-            userid = self.get_userid(request)
+            userid = self.get_userid(get_ip_address(request, self.proxies))
             if userid is None:
                 return principals
         else:
@@ -131,7 +131,7 @@ class IPAuthenticationPolicy(object):
             
         if self.get_principals is not None:
             principals.append(Authenticated)
-            principals.extend(self.get_principals(userid, request))
+            principals.extend(self.get_principals(userid, get_ip_address(request, self.proxies)))
         elif check_ip_address(request, self.ipaddrs, self.proxies):
             principals.append(Authenticated)
             if self.principals is not None:
