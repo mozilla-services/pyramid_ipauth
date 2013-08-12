@@ -159,6 +159,10 @@ def includeme(config):
         * ipauth.userid:      the userid as which to authenticate
         * ipauth.principals:  additional principals as which to authenticate
         * ipauth.proxies:     list of ip addresses to trust as proxies
+        * ipauth.get_userid:    a (dotted name to a) callable which receive 
+                                the ip address to compute the userid
+        * ipauth.get_principals:    a (dotted name to a) callable which receive 
+                                the ip address to compute the principals
 
     IP addresses can be specified in a variety of formats, including single
     addresses ("1.2.3.4"), networks ("1.2.3.0/16"), and globs ("1.2.3.*").
@@ -172,6 +176,6 @@ def includeme(config):
     # If the app configures one explicitly then this will get overridden.
     authz_policy = ACLAuthorizationPolicy()
     config.set_authorization_policy(authz_policy)
-    # Use the se    ttings to construct an AuthenticationPolicy.
+    # Use the settings to construct an AuthenticationPolicy.
     authn_policy = IPAuthenticationPolicy.from_settings(settings)
     config.set_authentication_policy(authn_policy)
