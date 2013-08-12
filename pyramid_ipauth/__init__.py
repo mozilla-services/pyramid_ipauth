@@ -73,13 +73,12 @@ class IPAuthenticationPolicy(object):
     implements(IAuthenticationPolicy)
 
     def __init__(self, ipaddrs=None, userid=None, principals=None, proxies=None, get_userid=None, get_principals=None):
+        if userid is None and get_userid is None:
+            raise ValueError('Either userid or get_userid need to be given as argument')
         r = DottedNameResolver()
         self.get_userid = r.maybe_resolve(get_userid)
         self.get_principals = r.maybe_resolve(get_principals)
-        if get_userid is not None:
-            self.ipaddrs = None
-        else:
-            self.ipaddrs = make_ip_set(ipaddrs)
+        self.ipaddrs = make_ip_set(ipaddrs)
         self.userid = userid
         self.principals = principals
         self.proxies = make_ip_set(proxies)
@@ -117,25 +116,24 @@ class IPAuthenticationPolicy(object):
         return self.userid
 
     def effective_principals(self, request):
-        principals = [Everyone]
+        if self.ipaddrs:
+            if not check_ip_address(request, self.ipaddrs, self.proxies):
+                return [Everyone]
         
         if self.get_userid is not None:
             userid = self.get_userid(get_ip_address(request, self.proxies))
-            if userid is None:
-                return principals
         else:
             userid = self.userid
+
+        if userid is None:
+            return [Everyone]
             
-        if userid is not None:
-            principals.insert(0, userid)
+        principals = [userid, Everyone, Authenticated]
             
         if self.get_principals is not None:
-            principals.append(Authenticated)
             principals.extend(self.get_principals(userid, get_ip_address(request, self.proxies)))
-        elif check_ip_address(request, self.ipaddrs, self.proxies):
-            principals.append(Authenticated)
-            if self.principals is not None:
-                principals.extend(self.principals)
+        if self.principals is not None:
+            principals.extend(self.principals)
                 
         return principals
 
