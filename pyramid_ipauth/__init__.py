@@ -57,7 +57,10 @@ class IPAuthenticationPolicy(object):
     def __init__(self, ipaddrs, userid=None, principals=None, proxies=None):
         self.ipaddrs = make_ip_set(ipaddrs)
         self.userid = userid
-        self.principals = principals
+        if isinstance(principals, basestring):
+            self.principals = aslist(principals)
+        else:
+            self.principals = principals
         self.proxies = make_ip_set(proxies)
 
     @classmethod
