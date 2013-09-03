@@ -19,8 +19,9 @@ from pyramid.interfaces import IAuthenticationPolicy
 from pyramid.security import Everyone, Authenticated
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.settings import aslist
+from pyramid.path import DottedNameResolver
 
-from pyramid_ipauth.utils import make_ip_set, check_ip_address
+from pyramid_ipauth.utils import make_ip_set, check_ip_address, get_ip_address
 
 
 class IPAuthenticationPolicy(object):
@@ -49,12 +50,34 @@ class IPAuthenticationPolicy(object):
 
         IPAuthenticationPolicy(["192.168.0.0/24"], "myuser",
                                proxies=["192.168.0.2"])
+                               
+    Instead of given the IP addresses, userid and principals at configuration time.
+    we can also compute these at runtime.
+
+        def get_userid(ipaddr):
+            "compute a userid based on the request"
+            if str(ipaddr).startswith('192'):
+                return 'LAN-user'
+            return 'WAN-user'
+        def get_principals(userid, ipaddr):
+            "return a list of principals"
+            if userid == 'WAN-user':
+                return ['view']
+            if userid == 'LAN-user':
+                return ['view', 'edit']
+            return []
+        IPAuthenticationPolicy(get_userid=get_userid, get_principals=get_principals)
 
     """
 
     implements(IAuthenticationPolicy)
 
-    def __init__(self, ipaddrs, userid=None, principals=None, proxies=None):
+    def __init__(self, ipaddrs=None, userid=None, principals=None, proxies=None, get_userid=None, get_principals=None):
+        if userid is None and get_userid is None:
+            raise ValueError('Either userid or get_userid need to be given as argument')
+        r = DottedNameResolver()
+        self.get_userid = r.maybe_resolve(get_userid)
+        self.get_principals = r.maybe_resolve(get_principals)
         self.ipaddrs = make_ip_set(ipaddrs)
         self.userid = userid
         self.principals = principals
@@ -76,26 +99,42 @@ class IPAuthenticationPolicy(object):
         userid = ipauth_settings.get("userid", None)
         principals = aslist(ipauth_settings.get("principals", ""))
         proxies = ipauth_settings.get("proxies", None)
+        get_userid = ipauth_settings.get("get_userid", None)
+        get_principals = ipauth_settings.get("get_principals", None)
         # The constructor uses make_ip_set to parse out strings,
         # so we're free to just pass them on in.
-        return cls(ipaddrs, userid, principals, proxies)
+        return cls(ipaddrs, userid, principals, proxies, get_userid, get_principals)
 
     def authenticated_userid(self, request):
         return self.unauthenticated_userid(request)
 
     def unauthenticated_userid(self, request):
+        if self.get_userid is not None:
+            return self.get_userid(get_ip_address(request, self.proxies))
         if not check_ip_address(request, self.ipaddrs, self.proxies):
             return None
         return self.userid
 
     def effective_principals(self, request):
-        principals = [Everyone]
-        if check_ip_address(request, self.ipaddrs, self.proxies):
-            if self.userid is not None:
-                principals.insert(0, self.userid)
-            principals.append(Authenticated)
-            if self.principals is not None:
-                principals.extend(self.principals)
+        if self.ipaddrs:
+            if not check_ip_address(request, self.ipaddrs, self.proxies):
+                return [Everyone]
+        
+        if self.get_userid is not None:
+            userid = self.get_userid(get_ip_address(request, self.proxies))
+        else:
+            userid = self.userid
+
+        if userid is None:
+            return [Everyone]
+            
+        principals = [userid, Everyone, Authenticated]
+            
+        if self.get_principals is not None:
+            principals.extend(self.get_principals(userid, get_ip_address(request, self.proxies)))
+        if self.principals is not None:
+            principals.extend(self.principals)
+                
         return principals
 
     def remember(self, request, principal, **kw):
@@ -120,6 +159,10 @@ def includeme(config):
         * ipauth.userid:      the userid as which to authenticate
         * ipauth.principals:  additional principals as which to authenticate
         * ipauth.proxies:     list of ip addresses to trust as proxies
+        * ipauth.get_userid:    a (dotted name to a) callable which receive 
+                                the ip address to compute the userid
+        * ipauth.get_principals:    a (dotted name to a) callable which receive 
+                                the ip address to compute the principals
 
     IP addresses can be specified in a variety of formats, including single
     addresses ("1.2.3.4"), networks ("1.2.3.0/16"), and globs ("1.2.3.*").

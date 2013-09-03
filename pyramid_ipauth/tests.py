@@ -184,6 +184,35 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.assertRaises(ValueError, is_in, "127.0.0.1", 3.14159)
         self.assertRaises(ValueError, is_in, "127.0.0.1", Ellipsis)
 
+    def test_callbacks(self):
+        def get_userid(ipaddr):
+            if str(ipaddr).startswith('192'):
+                return 'LAN-user'
+            if str(ipaddr).startswith('127'):
+                return 'localhost-user'
+            return None
+        def get_principals(userid, ipaddr):
+            principals = {
+                'LAN-user': ['view'],
+                'localhost-user': ['view', 'edit'],
+                }
+            return principals.get(userid, [])
+            
+        policy = IPAuthenticationPolicy(get_userid=get_userid, get_principals=get_principals)
+        # Addresses outside the range don't authenticate
+        request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
+        self.assertEqual(policy.unauthenticated_userid(request), "LAN-user")
+        self.assertEqual(policy.authenticated_userid(request), "LAN-user")
+        self.assertEqual(policy.effective_principals(request), ["LAN-user", Everyone, Authenticated, 'view'])
+        request = DummyRequest(environ={"REMOTE_ADDR": "127.0.0.1"})
+        self.assertEqual(policy.unauthenticated_userid(request), "localhost-user")
+        self.assertEqual(policy.authenticated_userid(request), "localhost-user")
+        self.assertEqual(policy.effective_principals(request), ["localhost-user", Everyone, Authenticated, 'view', 'edit'])
+        request = DummyRequest(environ={"REMOTE_ADDR": "86.8.8.8"})
+        self.assertEqual(policy.unauthenticated_userid(request), None)
+        self.assertEqual(policy.authenticated_userid(request), None)
+        self.assertEqual(policy.effective_principals(request), [Everyone])
+
     def test_from_settings(self):
         settings = {
             "foo": "bar",
