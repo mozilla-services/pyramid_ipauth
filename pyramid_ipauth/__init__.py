@@ -80,7 +80,10 @@ class IPAuthenticationPolicy(object):
         self.get_principals = r.maybe_resolve(get_principals)
         self.ipaddrs = make_ip_set(ipaddrs)
         self.userid = userid
-        self.principals = principals
+        if isinstance(principals, basestring):
+            self.principals = aslist(principals)
+        else:
+            self.principals = principals
         self.proxies = make_ip_set(proxies)
 
     @classmethod
