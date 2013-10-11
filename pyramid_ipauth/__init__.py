@@ -72,9 +72,7 @@ class IPAuthenticationPolicy(object):
 
     implements(IAuthenticationPolicy)
 
-    def __init__(self, ipaddrs=None, userid=None, principals=None, proxies=None, get_userid=None, get_principals=None):
-        if userid is None and get_userid is None:
-            raise ValueError('Either userid or get_userid need to be given as argument')
+    def __init__(self, ipaddrs, userid=None, principals=None, proxies=None, get_userid=None, get_principals=None):
         r = DottedNameResolver()
         self.get_userid = r.maybe_resolve(get_userid)
         self.get_principals = r.maybe_resolve(get_principals)
@@ -112,30 +110,32 @@ class IPAuthenticationPolicy(object):
         return self.unauthenticated_userid(request)
 
     def unauthenticated_userid(self, request):
-        if self.get_userid is not None:
-            return self.get_userid(get_ip_address(request, self.proxies))
         if not check_ip_address(request, self.ipaddrs, self.proxies):
             return None
-        return self.userid
+        if self.get_userid is not None:
+            userid = self.get_userid(get_ip_address(request, self.proxies))
+        else:
+            userid = self.userid
+        return userid
 
     def effective_principals(self, request):
-        if self.ipaddrs:
-            if not check_ip_address(request, self.ipaddrs, self.proxies):
-                return [Everyone]
+        principals = [Everyone]
+        if not check_ip_address(request, self.ipaddrs, self.proxies):
+            return principals
         
         if self.get_userid is not None:
             userid = self.get_userid(get_ip_address(request, self.proxies))
         else:
             userid = self.userid
 
-        if userid is None:
-            return [Everyone]
-            
-        principals = [userid, Everyone, Authenticated]
+        if userid is not None:
+            principals.insert(0, userid)
+            principals.append(Authenticated)
             
         if self.get_principals is not None:
-            principals.extend(self.get_principals(userid, get_ip_address(request, self.proxies)))
-        if self.principals is not None:
+            addr = get_ip_address(request, self.proxies)
+            principals.extend(self.get_principals(userid, addr))
+        elif self.principals is not None:
             principals.extend(self.principals)
                 
         return principals
