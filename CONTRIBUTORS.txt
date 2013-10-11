@@ -11,4 +11,6 @@ Contributors
 ------------
 
 - Marc Rijken <marc@rijken.org>, 2013/08/12
+- Jan Janak <jan@janakj.org>, 2013/09/17
+
 
