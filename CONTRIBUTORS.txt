@@ -2,11 +2,15 @@ List of Contributors
 ====================
 
 The below-signed are contributors to a code repository that is part of the
-project named "pyramid_ipauth".  Each below-signed contributor has read, understand
-and agrees to the terms of th MPL 2.0 license as of the date beside his or her name.
+project named "pyramid_ipauth".  Each below-signed contributor has read,
+understand and agrees to the terms of th MPL 2.0 license as of the date beside
+his or her name.
+
 
 Contributors
 ------------
 
-- Marc Rijken, 2013/08/12
+- Marc Rijken <marc@rijken.org>, 2013/08/12
+- Jan Janak <jan@janakj.org>, 2013/09/17
+
 

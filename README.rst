@@ -41,6 +41,9 @@ with pyramid_ipauth:
 
     http://github.com/mozilla-services/pyramid_multiauth
 
+If you don't want to hard-code the userid or principals at configuration time,
+you may specify a "get_userid" and/or "get_principals" callback instead.
+
 
 Specifying IP Addresses
 =======================
