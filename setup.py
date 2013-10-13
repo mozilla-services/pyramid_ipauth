@@ -13,7 +13,7 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 requires = ['pyramid', 'netaddr', 'unittest2']
 
 setup(name='pyramid_ipauth',
-      version='0.2.0',
+      version='0.2.1dev',
       description='pyramid_ipauth',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
