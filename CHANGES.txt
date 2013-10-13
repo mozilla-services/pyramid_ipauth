@@ -1,4 +1,4 @@
-0.2.0 - 2013-10-11
+0.2.0 - 2013-10-14
 ==================
 
 - Add get_userid and get_principals callback functions; thanks mrijken
