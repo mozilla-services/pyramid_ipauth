@@ -9,12 +9,20 @@ Utility functions for pyramid_ipauth
 
 import re
 import socket
+import sys
 
 from netaddr import IPAddress, IPNetwork, IPGlob, IPRange, IPSet
 
 #  This is used to split a string on an optional comma,
 #  followed by any amount of whitespace.
 _COMMA_OR_WHITESPACE = re.compile(r",?\s*")
+
+if sys.version_info < (3,):
+    integer_types = (int, long,)
+    string_types = (basestring,)
+else:
+    integer_types = (int,)
+    string_types = (str,)
 
 
 def get_ip_address(request, proxies=None):
@@ -93,10 +101,10 @@ def make_ip_set(ipaddrs):
     if ipaddrs is None:
         return IPSet()
     # Integers represent a single address.
-    if isinstance(ipaddrs, (int, long)):
+    if isinstance(ipaddrs, integer_types):
         return IPSet((IPAddress(ipaddrs),))
     # Strings get parsed as per parse_ip_set
-    if isinstance(ipaddrs, basestring):
+    if isinstance(ipaddrs, string_types):
         return parse_ip_set(ipaddrs)
     # Other netaddr types can be converted into a set.
     if isinstance(ipaddrs, (IPAddress, IPNetwork)):
