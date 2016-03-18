@@ -61,7 +61,7 @@ class IPAuthPolicyTests(unittest2.TestCase):
                           IPAddress("192.168.0.1"))
         # Testing with X-Forwaded-For and no trusted proxies
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1",
-                               "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
+                                        "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
         self.assertEquals(get_ip_address(request),
                           IPAddress("192.168.0.1"))
         # Testing with an untrusted proxy
@@ -71,18 +71,24 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.assertEquals(get_ip_address(request, "192.168.0.1"),
                           IPAddress("123.123.0.1"))
         # Testing with a malformed XFF header
-        request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1",
-                           "HTTP_X_FORWARDED_FOR": "124.124.0.1 123.123.0.1"})
+        request = DummyRequest(
+            environ={
+                "REMOTE_ADDR": "192.168.0.1",
+                "HTTP_X_FORWARDED_FOR": "124.124.0.1 123.123.0.1"})
         self.assertEquals(get_ip_address(request, "192.168.0.1"),
                           IPAddress("192.168.0.1"))
         # Testing with a trusted proxy and untrusted proxy
-        request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1",
-                           "HTTP_X_FORWARDED_FOR": "124.124.0.1, 123.123.0.1"})
+        request = DummyRequest(
+            environ={
+                "REMOTE_ADDR": "192.168.0.1",
+                "HTTP_X_FORWARDED_FOR": "124.124.0.1, 123.123.0.1"})
         self.assertEquals(get_ip_address(request, "192.168.0.1"),
                           IPAddress("123.123.0.1"))
         # Testing with several trusted proxies
-        request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1",
-                           "HTTP_X_FORWARDED_FOR": "124.124.0.1, 123.123.0.1"})
+        request = DummyRequest(
+            environ={
+                "REMOTE_ADDR": "192.168.0.1",
+                "HTTP_X_FORWARDED_FOR": "124.124.0.1, 123.123.0.1"})
         self.assertEquals(get_ip_address(request, "192.168.0.1 123.123.0.1"),
                           IPAddress("124.124.0.1"))
 
@@ -95,7 +101,7 @@ class IPAuthPolicyTests(unittest2.TestCase):
 
     def test_x_forwarded_for(self):
         policy = IPAuthenticationPolicy(["123.123.0.0/16"], "user",
-                              proxies=["124.124.0.0/24"])
+                                        proxies=["124.124.0.0/24"])
         # Requests without X-Forwarded-For work as normal
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
         self.assertEquals(policy.authenticated_userid(request), None)
@@ -103,19 +109,23 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.assertEquals(policy.authenticated_userid(request), "user")
         # Requests with untrusted X-Forwarded-For don't authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1",
-                               "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
+                                        "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
         self.assertEquals(policy.authenticated_userid(request), None)
         # Requests from single trusted proxy do authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "124.124.0.1",
-                               "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
+                                        "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
         self.assertEquals(policy.authenticated_userid(request), "user")
         # Requests from chain of trusted proxies do authenticate
-        request = DummyRequest(environ={"REMOTE_ADDR": "124.124.0.2",
-                          "HTTP_X_FORWARDED_FOR": "123.123.0.1, 124.124.0.1"})
+        request = DummyRequest(
+            environ={
+                "REMOTE_ADDR": "124.124.0.2",
+                "HTTP_X_FORWARDED_FOR": "123.123.0.1, 124.124.0.1"})
         self.assertEquals(policy.authenticated_userid(request), "user")
         # Requests with untrusted proxy in chain don't authenticate
-        request = DummyRequest(environ={"REMOTE_ADDR": "124.124.0.1",
-                          "HTTP_X_FORWARDED_FOR": "123.123.0.1, 192.168.0.1"})
+        request = DummyRequest(
+            environ={
+                "REMOTE_ADDR": "124.124.0.1",
+                "HTTP_X_FORWARDED_FOR": "123.123.0.1, 192.168.0.1"})
         self.assertEquals(policy.authenticated_userid(request), None)
 
     def test_principals(self):
@@ -191,15 +201,16 @@ class IPAuthPolicyTests(unittest2.TestCase):
             if str(ipaddr).startswith('127'):
                 return 'localhost-user'
             return None
+
         def get_principals(userid, ipaddr):
             principals = {
                 'LAN-user': ['view'],
                 'localhost-user': ['view', 'edit'],
                 }
             return principals.get(userid, [])
-            
+
         policy = IPAuthenticationPolicy("all", get_userid=get_userid,
-                                               get_principals=get_principals)
+                                        get_principals=get_principals)
         # Addresses outside the range don't authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
         self.assertEqual(policy.unauthenticated_userid(request), "LAN-user")
