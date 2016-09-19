@@ -12,7 +12,7 @@ from pyramid.security import Everyone, Authenticated
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.settings import aslist
 from pyramid.path import DottedNameResolver
-from pyramid.compat import iteritems_
+from pyramid.compat import iteritems_, string_types
 
 from pyramid_ipauth.utils import make_ip_set, check_ip_address, get_ip_address
 
@@ -23,12 +23,6 @@ __ver_patch__ = 0
 __ver_sub__ = ""
 __ver_tuple__ = (__ver_major__, __ver_minor__, __ver_patch__, __ver_sub__)
 __version__ = "%d.%d.%d%s" % __ver_tuple__
-
-
-if sys.version_info < (3,):
-    string_types = (basestring,)
-else:
-    string_types = (str,)
 
 
 @implementer(IAuthenticationPolicy)
