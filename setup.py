@@ -10,7 +10,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
 
-requires = ['pyramid', 'netaddr', 'unittest2']
+requires = ['pyramid>=1.3.0', 'netaddr', 'unittest2']
 
 setup(name='pyramid_ipauth',
       version='0.3.0',
