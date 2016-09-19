@@ -13,16 +13,11 @@ import sys
 
 from netaddr import IPAddress, IPNetwork, IPGlob, IPRange, IPSet
 
+from pyramid.compat import integer_types, string_types
+
 #  This is used to split a string on an optional comma,
 #  followed by any amount of whitespace.
 _COMMA_OR_WHITESPACE = re.compile(r",?\s*")
-
-if sys.version_info < (3,):
-    integer_types = (int, long,)
-    string_types = (basestring,)
-else:
-    integer_types = (int,)
-    string_types = (str,)
 
 
 def get_ip_address(request, proxies=None):
