@@ -13,5 +13,6 @@ Contributors
 - Marc Rijken <marc@rijken.org>, 2013/08/12
 - Jan Janak <jan@janakj.org>, 2013/09/17
 - Aleksander Sukharev <alexander.sukharev1@gmail.com>, 2016/03/15
+- Scott Searcy <smsearcy@gmail.com>, 2016/09/19
 
 
