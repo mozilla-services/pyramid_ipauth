@@ -12,6 +12,7 @@ from pyramid.security import Everyone, Authenticated
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.settings import aslist
 from pyramid.path import DottedNameResolver
+from pyramid.compat import iteritems_
 
 from pyramid_ipauth.utils import make_ip_set, check_ip_address, get_ip_address
 
@@ -101,7 +102,7 @@ class IPAuthenticationPolicy(object):
         """Construct an IPAuthenticationPolicy from deployment settings."""
         # Grab out all the settings keys that start with our prefix.
         ipauth_settings = {}
-        for name, value in settings.iteritems():
+        for name, value in iteritems_(settings):
             if not name.startswith(prefix):
                 continue
             ipauth_settings[name[len(prefix):]] = value
