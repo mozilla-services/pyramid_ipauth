@@ -17,7 +17,7 @@ from pyramid.compat import integer_types, string_types
 
 #  This is used to split a string on an optional comma,
 #  followed by any amount of whitespace.
-_COMMA_OR_WHITESPACE = re.compile(r",?\s*")
+_COMMA_OR_WHITESPACE = re.compile(r"(,\s*|\s+)")
 
 
 def get_ip_address(request, proxies=None):
