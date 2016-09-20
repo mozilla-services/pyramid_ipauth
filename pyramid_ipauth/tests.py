@@ -26,70 +26,70 @@ class IPAuthPolicyTests(unittest2.TestCase):
     def test_remember_forget(self):
         policy = IPAuthenticationPolicy(["123.123.0.0/16"], "user")
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
-        self.assertEquals(policy.remember(request, "user"), [])
-        self.assertEquals(policy.forget(request), [])
+        self.assertEqual(policy.remember(request, "user"), [])
+        self.assertEqual(policy.forget(request), [])
 
     def test_remote_addr(self):
         policy = IPAuthenticationPolicy(["123.123.0.0/16"], "user")
         # Addresses outside the range don't authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), None)
+        self.assertEqual(policy.authenticated_userid(request), None)
         # Addresses inside the range do authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "123.123.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), "user")
+        self.assertEqual(policy.authenticated_userid(request), "user")
         request = DummyRequest(environ={"REMOTE_ADDR": "123.123.1.2"})
-        self.assertEquals(policy.authenticated_userid(request), "user")
+        self.assertEqual(policy.authenticated_userid(request), "user")
 
     def test_noncontiguous_ranges(self):
         policy = IPAuthenticationPolicy(["123.123.0.0/16", "124.124.1.0/24"],
                                         "user")
         # Addresses outside the range don't authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), None)
+        self.assertEqual(policy.authenticated_userid(request), None)
         request = DummyRequest(environ={"REMOTE_ADDR": "124.124.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), None)
+        self.assertEqual(policy.authenticated_userid(request), None)
         # Addresses inside the range do authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "123.123.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), "user")
+        self.assertEqual(policy.authenticated_userid(request), "user")
         request = DummyRequest(environ={"REMOTE_ADDR": "124.124.1.2"})
-        self.assertEquals(policy.authenticated_userid(request), "user")
+        self.assertEqual(policy.authenticated_userid(request), "user")
 
     def test_get_ip_address(self):
         # Testing without X-Forwarded-For
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
-        self.assertEquals(get_ip_address(request),
+        self.assertEqual(get_ip_address(request),
                           IPAddress("192.168.0.1"))
         # Testing with X-Forwaded-For and no trusted proxies
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1",
                                         "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
-        self.assertEquals(get_ip_address(request),
+        self.assertEqual(get_ip_address(request),
                           IPAddress("192.168.0.1"))
         # Testing with an untrusted proxy
-        self.assertEquals(get_ip_address(request, "192.168.1.1"),
+        self.assertEqual(get_ip_address(request, "192.168.1.1"),
                           IPAddress("192.168.0.1"))
         # Testing with a trusted proxy
-        self.assertEquals(get_ip_address(request, "192.168.0.1"),
+        self.assertEqual(get_ip_address(request, "192.168.0.1"),
                           IPAddress("123.123.0.1"))
         # Testing with a malformed XFF header
         request = DummyRequest(
             environ={
                 "REMOTE_ADDR": "192.168.0.1",
                 "HTTP_X_FORWARDED_FOR": "124.124.0.1 123.123.0.1"})
-        self.assertEquals(get_ip_address(request, "192.168.0.1"),
+        self.assertEqual(get_ip_address(request, "192.168.0.1"),
                           IPAddress("192.168.0.1"))
         # Testing with a trusted proxy and untrusted proxy
         request = DummyRequest(
             environ={
                 "REMOTE_ADDR": "192.168.0.1",
                 "HTTP_X_FORWARDED_FOR": "124.124.0.1, 123.123.0.1"})
-        self.assertEquals(get_ip_address(request, "192.168.0.1"),
+        self.assertEqual(get_ip_address(request, "192.168.0.1"),
                           IPAddress("123.123.0.1"))
         # Testing with several trusted proxies
         request = DummyRequest(
             environ={
                 "REMOTE_ADDR": "192.168.0.1",
                 "HTTP_X_FORWARDED_FOR": "124.124.0.1, 123.123.0.1"})
-        self.assertEquals(get_ip_address(request, "192.168.0.1 123.123.0.1"),
+        self.assertEqual(get_ip_address(request, "192.168.0.1 123.123.0.1"),
                           IPAddress("124.124.0.1"))
 
     def test_check_ip_address(self):
@@ -104,42 +104,42 @@ class IPAuthPolicyTests(unittest2.TestCase):
                                         proxies=["124.124.0.0/24"])
         # Requests without X-Forwarded-For work as normal
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), None)
+        self.assertEqual(policy.authenticated_userid(request), None)
         request = DummyRequest(environ={"REMOTE_ADDR": "123.123.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), "user")
+        self.assertEqual(policy.authenticated_userid(request), "user")
         # Requests with untrusted X-Forwarded-For don't authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1",
                                         "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), None)
+        self.assertEqual(policy.authenticated_userid(request), None)
         # Requests from single trusted proxy do authenticate
         request = DummyRequest(environ={"REMOTE_ADDR": "124.124.0.1",
                                         "HTTP_X_FORWARDED_FOR": "123.123.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), "user")
+        self.assertEqual(policy.authenticated_userid(request), "user")
         # Requests from chain of trusted proxies do authenticate
         request = DummyRequest(
             environ={
                 "REMOTE_ADDR": "124.124.0.2",
                 "HTTP_X_FORWARDED_FOR": "123.123.0.1, 124.124.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), "user")
+        self.assertEqual(policy.authenticated_userid(request), "user")
         # Requests with untrusted proxy in chain don't authenticate
         request = DummyRequest(
             environ={
                 "REMOTE_ADDR": "124.124.0.1",
                 "HTTP_X_FORWARDED_FOR": "123.123.0.1, 192.168.0.1"})
-        self.assertEquals(policy.authenticated_userid(request), None)
+        self.assertEqual(policy.authenticated_userid(request), None)
 
     def test_principals(self):
         policy = IPAuthenticationPolicy(["123.123.0.0/16"],
-                                        principals=["test"])
+                                        principals="test")
         # Addresses outside the range don't get metadata set
         request = DummyRequest(environ={"REMOTE_ADDR": "192.168.0.1"})
-        self.assertEquals(policy.effective_principals(request), [Everyone])
+        self.assertEqual(policy.effective_principals(request), [Everyone])
         # Addresses inside the range do get metadata set
         request = DummyRequest(environ={"REMOTE_ADDR": "123.123.0.1"})
-        self.assertEquals(policy.effective_principals(request),
+        self.assertEqual(policy.effective_principals(request),
                           [Everyone, "test"])
         policy.userid = "user"
-        self.assertEquals(policy.effective_principals(request),
+        self.assertEqual(policy.effective_principals(request),
                           ["user", Everyone, Authenticated, "test"])
 
     def test_make_ip_set(self):
@@ -243,15 +243,15 @@ class IPAuthPolicyTests(unittest2.TestCase):
         # Try basic instantiation.
         auth = IPAuthenticationPolicy.from_settings(settings)
         self.assertTrue(IPAddress("123.123.0.1") in auth.ipaddrs)
-        self.assertEquals(auth.userid, "one")
-        self.assertEquals(auth.principals, ["two", "three"])
-        self.assertEquals(auth.proxies, IPSet([]))
+        self.assertEqual(auth.userid, "one")
+        self.assertEqual(auth.principals, ["two", "three"])
+        self.assertEqual(auth.proxies, IPSet([]))
         # Try instantiation with custom prefix.
         auth = IPAuthenticationPolicy.from_settings(settings,
                                                     prefix="otherauth.")
         self.assertTrue(IPAddress("127.0.0.1") in auth.ipaddrs)
-        self.assertEquals(auth.userid, "other")
-        self.assertEquals(auth.principals, [])
+        self.assertEqual(auth.userid, "other")
+        self.assertEqual(auth.principals, [])
         self.assertTrue(IPAddress("127.0.0.1") in auth.proxies)
         self.assertTrue(IPAddress("127.0.0.2") in auth.proxies)
         self.assertFalse(IPAddress("127.0.0.3") in auth.proxies)
@@ -260,8 +260,8 @@ class IPAuthPolicyTests(unittest2.TestCase):
                                                     prefix="otherauth.",
                                                     userid="overwritten")
         self.assertTrue(IPAddress("127.0.0.1") in auth.ipaddrs)
-        self.assertEquals(auth.userid, "overwritten")
-        self.assertEquals(auth.principals, [])
+        self.assertEqual(auth.userid, "overwritten")
+        self.assertEqual(auth.principals, [])
         self.assertTrue(IPAddress("127.0.0.1") in auth.proxies)
         self.assertTrue(IPAddress("127.0.0.2") in auth.proxies)
         self.assertFalse(IPAddress("127.0.0.3") in auth.proxies)
@@ -270,4 +270,4 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.config.add_settings({"ipauth.userid": "user"})
         includeme(self.config)
         policy = self.config.registry.getUtility(IAuthenticationPolicy)
-        self.assertEquals(policy.userid, "user")
+        self.assertEqual(policy.userid, "user")

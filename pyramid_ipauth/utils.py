@@ -9,7 +9,6 @@ Utility functions for pyramid_ipauth
 
 import re
 import socket
-import sys
 
 from netaddr import IPAddress, IPNetwork, IPGlob, IPRange, IPSet
 

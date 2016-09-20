@@ -4,7 +4,6 @@
 """
 IP-based authentication policy for pyramid.
 """
-import sys
 from zope.interface import implementer
 
 from pyramid.interfaces import IAuthenticationPolicy

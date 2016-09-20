@@ -1,9 +1,14 @@
 .hg*
 *.pyc
+*.egg
 *.egg-info
+.eggs/
 *.swp
-\.coverage
+.coverage
+.coverage.*
+.tox/
 *~
 dist
 build
 htmlcov
+venv/
