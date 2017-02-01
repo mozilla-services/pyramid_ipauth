@@ -182,6 +182,10 @@ class IPAuthPolicyTests(unittest2.TestCase):
         self.assertTrue(is_in("127.0.1.1", ips))
         self.assertTrue(is_in("123.123.1.1", ips))
         self.assertFalse(is_in("124.0.0.1", ips))
+        #  Test with list-splitting edge-cases
+        self.assertTrue(is_in("127.0.0.1", "127.0.0.2,127.0.0.1"))
+        self.assertTrue(is_in("127.0.0.1", "127.0.0.2,  127.0.0.1"))
+        self.assertTrue(is_in("127.0.0.1", "127.0.0.2 127.0.0.1"))
         #  Test with various strange inputs to the parser
         self.assertTrue(is_in("127.0.0.1", IPAddress("127.0.0.1")))
         self.assertTrue(is_in("127.0.0.1", int(IPAddress("127.0.0.1"))))
