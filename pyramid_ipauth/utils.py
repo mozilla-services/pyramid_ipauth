@@ -16,7 +16,7 @@ from pyramid.compat import integer_types, string_types
 
 #  This is used to split a string on an optional comma,
 #  followed by any amount of whitespace.
-_COMMA_OR_WHITESPACE = re.compile(r"(,\s*|\s+)")
+_COMMA_OR_WHITESPACE = re.compile(r"(?:,\s*)|(?:\s+)")
 
 
 def get_ip_address(request, proxies=None):
@@ -166,5 +166,9 @@ def get_local_ip_addresses():
     """Iterator yielding all local IP addresses on the machine."""
     # XXX: how can we enumerate all interfaces on the machine?
     # I don't really want to shell out to `ifconfig`
-    for addr in socket.gethostbyname_ex(socket.gethostname())[2]:
-        yield IPAddress(addr)
+    # Sadly this is not guaranteed to succeed.
+    try:
+        for addr in socket.gethostbyname_ex(socket.gethostname())[2]:
+            yield IPAddress(addr)
+    except socket.gaierror:
+        pass
