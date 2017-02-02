@@ -1,3 +1,8 @@
+0.3.3 - 2017-02-02
+==================
+
+- Fix splitting ipset strings on whitespace; thanks @kaleposhobios
+
 0.3.2 - 2017-01-22
 ==================
 
